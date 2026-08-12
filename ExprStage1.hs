@@ -74,6 +74,9 @@ sumExample =
         ]
     )
 
+plusThree :: Expr
+plusThree = ELambda "x" (EOp OPlus (EVar "x") (EPrim (PInt 3)))
+
 ppPrim :: Prim -> PP.Doc ann
 ppPrim = \case
     PInt n      -> PP.pretty n
@@ -122,6 +125,60 @@ ppExpr paren = \case
 
 prettyExpr :: Expr -> PP.Doc ann
 prettyExpr = ppExpr False
+
+data EValue
+    = EVInt    Int
+    | EVBool   Bool
+    | EVString String
+    | EVFun    (EValue -> Maybe EValue)
+    | EVRecord (Map String EValue)
+    | EVChoice String EValue
+
+instance Show EValue where
+    show = \case
+        EVInt n        -> "EVInt "    ++ show n
+        EVBool b       -> "EVBool "   ++ show b
+        EVString s     -> "EVString " ++ show s
+        EVFun {}       -> "EVFun <function>"
+        EVRecord xs    -> "EVRecord " ++ show xs
+        EVChoice tag x -> "EVChoice " ++ show tag ++ " (" ++ show x ++ ")"
+
+eval :: Map String EValue -> Expr -> Maybe EValue
+eval env = \case
+    EPrim p -> evalPrim p
+    EVar v -> M.lookup v env
+    ELambda n body -> pure (EVFun (\x -> eval (M.insert n x env) body))
+    EApply f x -> eval env f >>= \case
+        EVFun f' -> eval env x >>= f'
+        _ -> Nothing
+    EOp o x y -> do
+        u <- eval env x
+        v <- eval env y
+        case (u, v) of
+            (EVInt a, EVInt b) -> case o of
+                OPlus  -> pure (EVInt (a + b))
+                OTimes -> pure (EVInt (a * b))
+                OLte   -> pure (EVBool (a <= b))
+                OAnd   -> Nothing
+            (EVBool a, EVBool b) -> case o of
+                OAnd -> pure (EVBool (a && b))
+                _    -> Nothing
+            _ -> Nothing
+    ERecord xs -> EVRecord <$> traverse (eval env) xs
+    EAccess e k -> do
+        EVRecord xs <- eval env e
+        M.lookup k xs
+    EChoice tag x -> EVChoice tag <$> eval env x
+    ECase x hs -> do
+        EVChoice tag payload <- eval env x
+        (n, body) <- M.lookup tag hs
+        eval (M.insert n payload env) body
+
+evalPrim :: Prim -> Maybe EValue
+evalPrim = \case
+    PInt n -> pure (EVInt n)
+    PBool b -> pure (EVBool b)
+    PString s -> pure (EVString s)
 
 main :: IO ()
 main = print 1
