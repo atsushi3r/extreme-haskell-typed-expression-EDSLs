@@ -1,0 +1,19 @@
+name: extreme-haskell-typed-expression-EDSLs
+version: 0.1.0
+
+dependencies:
+  - base
+  - containers
+  - prettyprinter
+
+library:
+  source-dirs: src
+
+tests:
+  spec:
+    main: TestExpr.hs
+    source-dirs: test
+    dependencies:
+      - extreme-haskell-typed-expression-EDSLs
+      - tasty
+      - tasty-hunit

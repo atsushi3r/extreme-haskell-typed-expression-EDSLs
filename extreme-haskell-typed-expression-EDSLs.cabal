@@ -1,0 +1,38 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           extreme-haskell-typed-expression-EDSLs
+version:        0.1.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      ExprStage1
+  other-modules:
+      Paths_extreme_haskell_typed_expression_EDSLs
+  hs-source-dirs:
+      src
+  build-depends:
+      base
+    , containers
+    , prettyprinter
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: TestExpr.hs
+  other-modules:
+      Paths_extreme_haskell_typed_expression_EDSLs
+  hs-source-dirs:
+      test
+  build-depends:
+      base
+    , containers
+    , extreme-haskell-typed-expression-EDSLs
+    , prettyprinter
+    , tasty
+    , tasty-hunit
+  default-language: Haskell2010

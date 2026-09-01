@@ -1,22 +1,7 @@
-#!/usr/bin/env stack
-{- stack
-   --resolver nightly-2024-02-02
-   script
-   --package base,containers,prettyprinter
-   --ghc-options -Wall
-   --ghc-options -Wcompat
-   --ghc-options -Wno-unused-top-binds
-   --ghc-options -Wno-unused-imports
-   --ghc-options -Wno-name-shadowing
--}
--- stack repl % --ghc-options=-fforce-recomp\ -fobject-code\ -O2
-
-{-
- - Extreme Haskell: Typed Expression EDSLs (Part 1)
- - https://blog.jle.im/entry/extreme-haskell-typed-expression-edsls-1.html
- -}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+module ExprStage1 where
 
 import Data.Map as M
 import Prettyprinter as PP
@@ -179,8 +164,4 @@ evalPrim = \case
     PInt n -> pure (EVInt n)
     PBool b -> pure (EVBool b)
     PString s -> pure (EVString s)
-
-main :: IO ()
-main = print 1
-
 
