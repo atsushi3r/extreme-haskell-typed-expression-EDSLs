@@ -1,41 +1,40 @@
-name: Haskell Script CI
+name: Haskell CI
 
 on:
     push:
-        branches: [ main ]
+        branches: [ "main" ]
     pull_request:
-        branches: [ main ]
+        branches: [ "main" ]
 
-permissions:
-    contents: read
+" permissions:
+"     contents: read
 
 jobs:
-    test:
-        name: Run Script Test
+    build-and-test:
         runs-on: ubuntu-latest
 
         steps:
-        # 1. ソースコードのチェックアウト
-        - name: Checkout repository
-          uses: actions/checkout@v4
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-        # 2. Haskell 環境（Stack）のセットアップ
-        - name: Setup Haskell
-          uses: haskell-actions/setup@2
-          with:
-            enable-stack: true
-            stack-no-global: true
+            - name: Setup Haskell Stack
+              uses: haskell-actions/setup@v2
+              with:
+                ghc-version: '9.8.1'
+                enable-stack: true
+                stack-version: 'latest'
 
-        # 3. グローバル依存関係のキャッシュ（2回目以降の高速化）
-        - name: Cache Stack global
-          uses: actions/cache@v4
-          with:
-            path: ~/.stack
-            key: ${{ runner.os }}-stack-global-${{ hashFiles('**/*.hs') }}
-            restore-keys: |
-              ${{ runner.os }}-stack-global-
+            - name: Cache ~/.stack and .stack-work
+              uses: actions/cache@v4
+              with:
+                path: |
+                  ~/.stack
+                  .stack-work
+                key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml.lock', 'package.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-stack-
+            - name: Build dependencies & project
+              run: stack build --test --no-run-tests
 
-        # 4. スクリプトのテストを実行
-        - name: Run test script
-          run: stack test.hs
-
+            - name: Run Tasty Test Suite
+              run: stack test
