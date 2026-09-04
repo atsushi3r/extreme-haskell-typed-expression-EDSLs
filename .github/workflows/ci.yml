@@ -1,4 +1,4 @@
-name: Haskell CI
+name: Haskell CI (Cabal)
 
 on:
     push:
@@ -14,24 +14,23 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Setup Haskell Stack
+            - name: Setup Haskell (GHC & Cabal)
               uses: haskell-actions/setup@v2
               with:
                 ghc-version: '9.8.1'
-                enable-stack: true
-                stack-version: 'latest'
+                cabal-version: 'latest'
 
-            - name: Cache ~/.stack and .stack-work
+            - name: Cache Cabal dependencies
               uses: actions/cache@v4
               with:
                 path: |
-                  ~/.stack
-                  .stack-work
-                key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml.lock', 'package.yaml') }}
+                  ~/.cabal/store
+                  dist-newstyle
+                key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
                 restore-keys: |
-                  ${{ runner.os }}-stack-
-            - name: Build dependencies & project
-              run: stack build --test --no-run-tests
+                  ${{ runner.os }}-cabal-
+            - name: Build project
+              run: cabal build --enable-tests
 
-            - name: Run Tasty Test Suite
-              run: stack test
+            - name: Run Tasty Tests
+              run: cabal test --test-show-details=direct
