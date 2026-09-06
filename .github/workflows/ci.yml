@@ -12,7 +12,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Setup Haskell Stack
               uses: haskell-actions/setup@v2
@@ -22,7 +22,7 @@ jobs:
                 stack-version: 'latest'
 
             - name: Cache ~/.stack and .stack-work
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                 path: |
                   ~/.stack
