@@ -1,4 +1,4 @@
-module Main where
+module ExprStage1Spec (tests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -11,7 +11,7 @@ main = defaultMain tests
 
 -- テスト本体での利用例
 tests :: TestTree
-tests = testGroup "EValue Evaluator Tests"
+tests = testGroup "ExprStage1 Tests"
   [ testCase "plusThree evaluation (3 + 5 = 8)" $ do
       let env = M.empty
       let expr = EApply plusThree (EPrim (PInt 5))
