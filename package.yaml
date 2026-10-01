@@ -1,0 +1,29 @@
+name: extreme-haskell-typed-expression-EDSLs
+version: 0.1.0
+
+dependencies:
+  - base
+  - containers
+  - prettyprinter
+
+default-extensions:
+  - GADTs
+  - DataKinds
+  - KindSignatures
+  - LambdaCase
+
+library:
+  source-dirs: src
+
+tests:
+  extreme-haskell-typed-expression-EDSLs-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - extreme-haskell-typed-expression-EDSLs
+      - tasty
+      - tasty-hunit

@@ -2,7 +2,7 @@ name: Haskell CI (Cabal)
 
 on:
     push:
-        branches: [ "main" ]
+        branches: [ "main", "migrate-to-cabal" ]
     pull_request:
         branches: [ "main" ]
 
@@ -20,15 +20,25 @@ jobs:
                 ghc-version: '9.8.1'
                 cabal-version: 'latest'
 
+            - name: Install hpack
+              run: cabal install hpack
+
+            - name: Generate .cabal file
+              run: hpack
+
             - name: Cache Cabal dependencies
               uses: actions/cache@v5
               with:
                 path: |
                   ~/.cabal/store
                   dist-newstyle
-                key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
+                key: ${{ runner.os }}-cabal-${{ hashFiles('package.yaml') }}
                 restore-keys: |
                   ${{ runner.os }}-cabal-
+
+            - name: Update cabal cache
+              run: cabal update
+
             - name: Build project
               run: cabal build --enable-tests
 

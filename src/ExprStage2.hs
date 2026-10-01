@@ -1,0 +1,168 @@
+{-# LANGUAGE TypeData #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module ExprStage2 where
+
+import Data.Map ( Map )
+import qualified Data.Map as M
+
+import Data.Kind ( Type )
+import Data.Type.Equality
+
+import Prettyprinter as PP
+
+type data Ty
+    = TInt
+    | TBool
+    | TString
+    | Ty :-> Ty
+
+infixr 0 :->
+
+data STy :: Ty -> Type where
+    STInt    :: STy TInt
+    STBool   :: STy TBool
+    STString :: STy TString
+    STFun    :: STy a -> STy b -> STy (a :-> b)
+
+data Prim :: Ty -> Type where
+    PInt    :: Int    -> Prim TInt
+    PBool   :: Bool   -> Prim TBool
+    PString :: String -> Prim TString
+
+data Op :: Ty -> Ty -> Ty -> Type where
+    OPlus  :: Op TInt TInt TInt
+    OTimes :: Op TInt TInt TInt
+    OLte   :: Op TInt TInt TBool
+    OAnd   :: Op TBool TBool TBool
+
+data Expr :: Ty -> Type where
+    EPrim   :: Prim t         -> Expr t
+    EVar    :: STy t          -> String -> Expr t
+    ELambda :: STy a          -> String -> Expr b -> Expr (a :-> b)
+    EApply  :: Expr (a :-> b) -> Expr a -> Expr b
+    EOp     :: Op a b c       -> Expr a -> Expr b -> Expr c
+
+-- (\x -> x * 3) 5
+fifteen :: Expr TInt
+fifteen =
+    EApply
+        (ELambda STInt "x" (EOp OTimes (EVar STInt "x") (EPrim (PInt 3))))
+        (EPrim (PInt 5))
+
+badVariable :: Expr TInt
+badVariable =
+    EApply
+      (ELambda STInt "x" (EOp OTimes (EVar STInt "x") (EPrim (PInt 3))))
+      (EPrim (PInt 5))
+
+plusThree :: Expr (TInt :-> TInt)
+plusThree = ELambda STInt "x" (EOp OPlus (EVar STInt "x") (EPrim (PInt 3)))
+
+-- testLambda :: Maybe String
+-- testLambda = do
+--     EVFun f <- eval M.empty plusThree
+--     showEValue <$> f (EVInt 4)
+
+prettyExpr :: Expr t -> PP.Doc ann
+prettyExpr = ppExpr False
+
+ppExpr :: Bool -> Expr t -> PP.Doc ann
+ppExpr paren = \case
+    EPrim p -> ppPrim p
+    EVar _ v -> PP.pretty v
+    ELambda _ n body -> wrap $ "\\" <> PP.pretty n <+> "->" <+> ppExpr False body
+    EApply f x -> wrap $ ppExpr True f <+> ppExpr True x
+    EOp o x y -> wrap $ ppExpr True x <+> ppOp o <+> ppExpr True y
+  where
+    wrap
+      | paren = PP.parens
+      | otherwise = id
+
+ppPrim :: Prim t -> PP.Doc ann
+ppPrim = \case
+    PInt n -> PP.pretty n
+    PBool b -> if b then "true" else "false"
+    PString s -> PP.pretty (show s)
+
+ppOp :: Op a b c -> PP.Doc ann
+ppOp = \case
+    OPlus  -> "+"
+    OTimes -> "*"
+    OLte   -> "<="
+    OAnd   -> "&&"
+
+data EValue :: Ty -> Type where
+    EVInt    :: Int       -> EValue TInt
+    EVBool   :: Bool      -> EValue TBool
+    EVString :: String    -> EValue TString
+    EVFun    :: (EValue a -> Maybe (EValue b)) -> EValue (a :-> b)
+
+data SomeValue = forall t. SomeValue (STy t) (EValue t)
+
+showEValue :: EValue t -> String
+showEValue = \case
+    EVInt n    -> show n
+    EVBool b   -> show b
+    EVString s -> show s
+    EVFun _    -> "<function>"
+
+instance TestEquality STy where
+    testEquality = sameTy
+
+sameTy :: STy a -> STy b -> Maybe (a :~: b)
+sameTy = \case
+    STInt -> \case
+        STInt -> Just Refl
+        _     -> Nothing
+    STBool -> \case
+        STBool -> Just Refl
+        _      -> Nothing
+    STString -> \case
+        STString -> Just Refl
+        _        -> Nothing
+    STFun a b -> \case
+        STFun c d -> do
+            Refl <- sameTy a c
+            Refl <- sameTy b d
+            Just Refl
+        _         -> Nothing
+
+eValueToInt :: EValue TInt -> Int
+eValueToInt = \case
+    EVInt x -> x
+
+eval :: Map String SomeValue -> Expr t -> Maybe (EValue t)
+eval env = \case
+    EPrim (PInt n) -> pure (EVInt n)
+    EPrim (PBool b) -> pure (EVBool b)
+    EPrim (PString s) -> pure (EVString s)
+    EVar t v -> do
+        SomeValue t' v' <- M.lookup v env
+        Refl <- sameTy t t'
+        pure v'
+    ELambda ta n body ->
+        pure $ EVFun $ \x -> eval (M.insert n (SomeValue ta x) env) body
+    EApply f x -> do
+        EVFun g <- eval env f
+        x' <- eval env x
+        g x'
+    EOp o x y -> case o of
+        OPlus -> do
+            EVInt a <- eval env x
+            EVInt b <- eval env y
+            pure (EVInt (a + b))
+        OTimes -> do
+            EVInt a <- eval env x
+            EVInt b <- eval env y
+            pure (EVInt (a * b))
+        OLte -> do
+            EVInt a <- eval env x
+            EVInt b <- eval env y
+            pure (EVBool (a <= b))
+        OAnd -> do
+            EVBool a <- eval env x
+            EVBool b <- eval env y
+            pure (EVBool (a && b))
+

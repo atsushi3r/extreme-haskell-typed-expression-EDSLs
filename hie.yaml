@@ -1,2 +1,6 @@
 cradle:
   cabal:
+    - path: "src"
+      component: "extereme-haskell-typed-expression-EDSLs:lib"
+    - path: "test"
+      component: "extreme-haskell-typed-expression-EDSLs:test:extreme-haskell-typed-expression-EDSLs-test"
