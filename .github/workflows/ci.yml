@@ -14,14 +14,18 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v5
 
-            - name: Generate .cabal file
-              run: hpack
-
             - name: Setup Haskell (GHC & Cabal)
               uses: haskell-actions/setup@v2
               with:
                 ghc-version: '9.8.1'
                 cabal-version: 'latest'
+                cabal-update: false
+
+            - name: Generate .cabal file
+              run: hpack
+
+            - name: Update Cabal index
+              run: cabal update
 
             - name: Cache Cabal dependencies
               uses: actions/cache@v5
