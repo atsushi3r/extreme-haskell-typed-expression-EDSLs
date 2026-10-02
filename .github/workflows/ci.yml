@@ -14,12 +14,6 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v5
 
-            - name: Setup hpack
-              uses: middleground-ai/setup-hpack@v1
-
-            - name: Generate .cabal file
-              run: hpack
-
             - name: Setup Haskell (GHC & Cabal)
               uses: haskell-actions/setup@v2
               with:
