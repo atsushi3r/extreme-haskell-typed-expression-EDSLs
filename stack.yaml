@@ -32,7 +32,7 @@ snapshot: nightly-2024-02-02
 packages:
 - .
 # .build-cache/stack-work に出力先を変更
-work-dir: .build-cache/stack-work
+work-dir: ./.build-cache/stack-work
 # Dependency packages to be pulled from upstream that are not in the snapshot.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
